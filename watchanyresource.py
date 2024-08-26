@@ -4,19 +4,20 @@ import json
 import urllib3
 import requests
 import websocket, ssl
+import subprocess
 from kubernetes import config
 from kubernetes.client import configuration
 from subprocess import Popen
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
-groupversion = os.environ['GROUPANDVERSION']
-resourcetype = os.environ['RESOURCETYPE']
-namespace = os.environ['NAMESPACE']
+#groupversion = os.environ.get('GROUPANDVERSION')
+#resourcetype = os.environ.get('RESOURCETYPE')
+#namespace = os.environ.get('NAMESPACE',"")
 
-#groupversion = "v1"
-#resourcetype = "services"
-#namespace = ""
+groupversion = "v1"
+resourcetype = "services"
+namespace = ""
 # cluster.x-k8s.io/v1beta1
 
 def get_kubeapi_request(httpsession,path,header):
@@ -81,23 +82,24 @@ def main():
             os.environ["CHANGED_VARIABLE"] = json.dumps(json_msg['object'])
 
             if json_msg['type'] == "ADDED":
-                for name, value in os.environ.items():
-                    print("{0}: {1}".format(name, value))
-                #for file in os.listdir('added'):
-                #    print(file)
-                print("============================================")
+                #for name, value in os.environ.items():
+                #    print("{0}: {1}".format(name, value))
+                #files = [f for f in files if os.path.isfile(Direc+'/'+f)]
+                print("There was an ADD event for the resource of type "+resourcetype+". Executing user provided scripts in the \"added\" subfolder... ")
+                for file in sorted(os.listdir('added')):
+                    print("Now executing file - added/"+file+" ...")
+                    p = Popen(['added/'+file],start_new_session=True,stdin=subprocess.DEVNULL)
+                    #p.terminate()
             elif json_msg['type'] == "MODIFIED":
-                for name, value in os.environ.items():
-                    print("{0}: {1}".format(name, value))
-                #for file in os.listdir('modified'):
-                #    print(file)
-                print("============================================")
+                print("There was an MODIFY event for the resource of type "+resourcetype+". Executing user provided scripts in the \"modified\" subfolder... ")
+                for file in sorted(os.listdir('modified')):
+                    print("Now executing file - modified/"+file+" ...")
+                    p = Popen(['modified/'+file],start_new_session=True,stdin=subprocess.DEVNULL)
             elif json_msg['type'] == "DELETED":
-                for name, value in os.environ.items():
-                    print("{0}: {1}".format(name, value))
-                #for file in os.listdir('deleted'):
-                #    print(file)
-                print("============================================")
+                print("There was an DELETE event for the resource of type "+resourcetype+". Executing user provided scripts in the \"deleted\" subfolder... ")
+                for file in sorted(os.listdir('deleted')):
+                    print("Now executing file - deleted/"+file+" ...")
+                    p = Popen(['deleted/'+file],start_new_session=True,stdin=subprocess.DEVNULL)
             else:
                 pass
 
